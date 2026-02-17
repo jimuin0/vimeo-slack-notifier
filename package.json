@@ -1,0 +1,53 @@
+{
+  "name": "vimeo-line-notifier-external",
+  "version": "1.0.0",
+  "description": "Vimeo video completion LINE notification system with Supabase + Railway + Vercel",
+  "type": "module",
+  "scripts": {
+    "dev:server": "tsx watch server/index.ts",
+    "dev:client": "vite",
+    "dev": "concurrently \"npm:dev:server\" \"npm:dev:client\"",
+    "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build:client": "vite build",
+    "build": "npm run build:client && npm run build:server",
+    "start": "NODE_ENV=production node dist/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.7",
+    "@tanstack/react-query": "^5.90.2",
+    "@trpc/client": "^11.6.0",
+    "@trpc/react-query": "^11.6.0",
+    "@trpc/server": "^11.6.0",
+    "axios": "^1.12.0",
+    "clsx": "^2.1.1",
+    "cors": "^2.8.5",
+    "drizzle-orm": "^0.44.5",
+    "express": "^4.21.2",
+    "lucide-react": "^0.453.0",
+    "postgres": "^3.4.4",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "recharts": "^2.15.2",
+    "superjson": "^1.13.3",
+    "wouter": "^3.3.5",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^24.7.0",
+    "@types/react": "^19.2.1",
+    "@types/react-dom": "^19.2.1",
+    "@vitejs/plugin-react": "^5.0.4",
+    "concurrently": "^9.1.2",
+    "drizzle-kit": "^0.31.4",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.1.14",
+    "tsx": "^4.19.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.7"
+  }
+}

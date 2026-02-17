@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm run build:server"
+
+[deploy]
+startCommand = "npm start"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[[services]]
+name = "api"
