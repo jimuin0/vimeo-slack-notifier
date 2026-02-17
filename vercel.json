@@ -1,10 +1,5 @@
 {
-  "buildCommand": "cd client && npm run build",
-  "outputDirectory": "client/dist",
-  "framework": "vite",
-  "env": {
-    "VITE_API_URL": "@api_url",
-    "VITE_SUPABASE_URL": "@supabase_url",
-    "VITE_SUPABASE_ANON_KEY": "@supabase_anon_key"
-  }
+  "buildCommand": "cd client && npx vite build --outDir ../dist/client",
+  "outputDirectory": "dist/client",
+  "framework": "vite"
 }
