@@ -17,7 +17,7 @@ function AdminLayout({ children, onLogout }: { children: React.ReactNode; onLogo
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/">
-              <a className="font-bold text-lg">Vimeo Slack通知</a>
+              <a className="font-bold text-lg">動画視聴管理</a>
             </Link>
             <Link href="/vimeo-videos">
               <a className={`text-sm ${location === '/vimeo-videos' ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-gray-900'}`}>
