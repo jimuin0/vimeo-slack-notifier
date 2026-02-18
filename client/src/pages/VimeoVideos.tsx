@@ -136,9 +136,9 @@ export default function VimeoVideos() {
                   <td className="border-b p-3">{v.title}</td>
                   <td className="border-b p-3 text-sm text-gray-600">{v.notificationMessage}</td>
                   <td className="border-b p-3">
-                    <code className="text-xs bg-gray-100 px-2 py-1 rounded break-all">
+                    <a href={`${baseUrl}/watch/${v.videoId}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline break-all">
                       {baseUrl}/watch/{v.videoId}
-                    </code>
+                    </a>
                   </td>
                   <td className="border-b p-3">
                     <button
