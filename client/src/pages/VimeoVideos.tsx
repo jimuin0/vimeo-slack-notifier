@@ -68,7 +68,7 @@ export default function VimeoVideos() {
           <h2 className="text-lg font-semibold mb-4">{editingId ? '動画を編集' : '動画を追加'}</h2>
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Vimeo Video ID</label>
+              <label className="block text-sm font-medium mb-1">YouTube Video ID</label>
               <input
                 type="text"
                 value={videoId}
@@ -79,7 +79,7 @@ export default function VimeoVideos() {
                 disabled={!!editingId}
               />
               {!editingId && (
-                <p className="text-xs text-gray-500 mt-1">VimeoのURLの数字部分（例: vimeo.com/<strong>123456789</strong>）</p>
+                <p className="text-xs text-gray-500 mt-1">YouTubeのURLのID部分（例: youtube.com/watch?v=<strong>123456789</strong>）</p>
               )}
             </div>
             <div>

@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'wouter';
 import { trpc } from '../lib/trpc';
 
 declare global {
   interface Window {
-    Vimeo: any;
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
   }
 }
 
@@ -15,6 +16,8 @@ export default function WatchVideo() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [sessionId] = useState(() => crypto.randomUUID());
   const playerRef = useRef<any>(null);
+  const timerRef = useRef<any>(null);
+  const lastRecordedRef = useRef<number>(0);
 
   const { data: video } = trpc.vimeoVideos.getByVideoId.useQuery(
     { videoId: videoId || '' },
@@ -24,75 +27,114 @@ export default function WatchVideo() {
   const recordEvent = trpc.viewingEvents.record.useMutation();
   const sendCompletion = trpc.notification.sendCompletion.useMutation();
 
-  useEffect(() => {
-    if (!isNameSubmitted || !videoId) return;
-
-    const iframe = document.getElementById('vimeo-player') as HTMLIFrameElement;
-    if (!iframe || !window.Vimeo) return;
-
-    const player = new window.Vimeo.Player(iframe);
-    playerRef.current = player;
-
-    player.on('play', () => {
-      recordEvent.mutate({
-        viewerName,
-        sessionId,
-        videoId,
-        eventType: 'play',
-        currentTime: 0,
-        duration: 0,
-      });
-    });
-
-    player.on('pause', (data: any) => {
-      recordEvent.mutate({
-        viewerName,
-        sessionId,
-        videoId,
-        eventType: 'pause',
-        currentTime: Math.floor(data.seconds),
-        duration: Math.floor(data.duration),
-      });
-    });
-
-    player.on('ended', (data: any) => {
-      recordEvent.mutate({
-        viewerName,
-        sessionId,
-        videoId,
-        eventType: 'ended',
-        currentTime: Math.floor(data.duration),
-        duration: Math.floor(data.duration),
-      });
-
-      if (!isCompleted) {
-        setIsCompleted(true);
-        sendCompletion.mutate({ videoId, viewerName });
-      }
-    });
-
-    // Record timeupdate every 10 seconds
-    let lastRecorded = 0;
-    player.on('timeupdate', (data: any) => {
-      const currentSec = Math.floor(data.seconds);
-      if (currentSec - lastRecorded >= 10) {
-        lastRecorded = currentSec;
+  const startTimeTracking = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      const player = playerRef.current;
+      if (!player || !player.getCurrentTime) return;
+      const currentSec = Math.floor(player.getCurrentTime());
+      const duration = Math.floor(player.getDuration());
+      if (currentSec - lastRecordedRef.current >= 10) {
+        lastRecordedRef.current = currentSec;
         recordEvent.mutate({
           viewerName,
           sessionId,
-          videoId,
+          videoId: videoId || '',
           eventType: 'timeupdate',
           currentTime: currentSec,
-          duration: Math.floor(data.duration),
+          duration,
         });
       }
-    });
+    }, 2000);
+  }, [viewerName, sessionId, videoId]);
+
+  const stopTimeTracking = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isNameSubmitted || !videoId) return;
+
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+    }
+
+    const initPlayer = () => {
+      playerRef.current = new window.YT.Player('youtube-player', {
+        videoId,
+        playerVars: {
+          autoplay: 0,
+          rel: 0,
+          modestbranding: 1,
+        },
+        events: {
+          onStateChange: (event: any) => {
+            const player = event.target;
+            const currentTime = Math.floor(player.getCurrentTime());
+            const duration = Math.floor(player.getDuration());
+
+            switch (event.data) {
+              case window.YT.PlayerState.PLAYING:
+                recordEvent.mutate({
+                  viewerName,
+                  sessionId,
+                  videoId,
+                  eventType: 'play',
+                  currentTime,
+                  duration,
+                });
+                startTimeTracking();
+                break;
+
+              case window.YT.PlayerState.PAUSED:
+                recordEvent.mutate({
+                  viewerName,
+                  sessionId,
+                  videoId,
+                  eventType: 'pause',
+                  currentTime,
+                  duration,
+                });
+                stopTimeTracking();
+                break;
+
+              case window.YT.PlayerState.ENDED:
+                recordEvent.mutate({
+                  viewerName,
+                  sessionId,
+                  videoId,
+                  eventType: 'ended',
+                  currentTime: duration,
+                  duration,
+                });
+                stopTimeTracking();
+                if (!isCompleted) {
+                  setIsCompleted(true);
+                  sendCompletion.mutate({ videoId, viewerName });
+                }
+                break;
+            }
+          },
+        },
+      });
+    };
+
+    if (window.YT && window.YT.Player) {
+      initPlayer();
+    } else {
+      window.onYouTubeIframeAPIReady = initPlayer;
+    }
 
     return () => {
-      player.off('play');
-      player.off('pause');
-      player.off('ended');
-      player.off('timeupdate');
+      stopTimeTracking();
+      if (playerRef.current && playerRef.current.destroy) {
+        playerRef.current.destroy();
+      }
     };
   }, [isNameSubmitted, videoId]);
 
@@ -111,7 +153,6 @@ export default function WatchVideo() {
     );
   }
 
-  // Step 1: Name input
   if (!isNameSubmitted) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -144,20 +185,15 @@ export default function WatchVideo() {
     );
   }
 
-  // Step 2: Video player
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-2xl font-bold mb-4">{video?.title || '動画視聴'}</h1>
       <p className="text-gray-600 mb-4">視聴者: {viewerName}</p>
-      
+
       <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
-        <iframe
-          id="vimeo-player"
-          src={`https://player.vimeo.com/video/${videoId}?autopause=0`}
+        <div
+          id="youtube-player"
           className="absolute top-0 left-0 w-full h-full rounded-lg"
-          frameBorder="0"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowFullScreen
         />
       </div>
 

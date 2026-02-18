@@ -9,7 +9,7 @@ export default function Home() {
         <Link href="/vimeo-videos">
           <a className="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
             <h2 className="text-xl font-semibold mb-2">🎬 動画管理</h2>
-            <p className="text-gray-600">Vimeo動画の登録・管理</p>
+            <p className="text-gray-600">YouTube動画の登録・管理</p>
           </a>
         </Link>
         
