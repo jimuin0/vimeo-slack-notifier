@@ -12,7 +12,6 @@ export const vimeoVideos = pgTable("vimeo_videos", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   videoId: varchar("video_id", { length: 64 }).notNull().unique(),
   title: text("title").notNull(),
-  description: text("description"),
   notificationMessage: text("notification_message").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
